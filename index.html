@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warmspin · 机械盘游戏加速器</title>
+<meta name="description" content="Warmspin 给装在机械硬盘上的游戏做加载优化：内存预热、修预读、排除杀软扫描。开源、免费、单文件、不装驱动。">
+<meta name="theme-color" content="#0b0d11">
+<style>
+  :root{
+    --bg:#0b0d11; --panel:#13161c; --panel2:#171b22; --line:#242a34;
+    --text:#eef0f4; --dim:#9aa3b2; --mute:#5f6875;
+    --red:#ff4655; --red2:#ff6b6b; --ok:#34d399;
+    --max:1080px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:70px}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:"Microsoft YaHei UI","PingFang SC","Segoe UI",system-ui,sans-serif;
+    line-height:1.68;-webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+  .glow{position:fixed;inset:auto auto 0 0;width:720px;height:720px;pointer-events:none;z-index:0;
+    background:radial-gradient(circle at 30% 30%, rgba(255,70,85,.16), transparent 62%);filter:blur(24px)}
+
+  nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);
+    background:rgba(11,13,17,.82);border-bottom:1px solid var(--line)}
+  nav .inner{max-width:var(--max);margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:18px}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+  .mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--red2),var(--red));box-shadow:0 4px 16px rgba(255,70,85,.3)}
+  .mark svg{width:19px;height:19px}
+  .brand b{font-size:16px;letter-spacing:.3px}
+  nav a.lnk{color:var(--dim);font-size:13px;padding:6px 2px;border-bottom:2px solid transparent}
+  nav a.lnk:hover{color:var(--text);border-bottom-color:var(--red)}
+  .navdl{padding:8px 16px;border-radius:9px;font-size:13px;font-weight:600;
+    background:linear-gradient(135deg,var(--red2),var(--red));color:#fff}
+
+  .hero{position:relative;z-index:1;padding:70px 0 44px;text-align:center}
+  .hero h1{font-size:46px;line-height:1.18;margin:0 0 16px;font-weight:800;letter-spacing:-.5px}
+  .hero h1 span{background:linear-gradient(135deg,var(--red2),var(--red));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lead{color:var(--dim);font-size:16px;max-width:640px;margin:0 auto 30px}
+  .cta{display:inline-flex;align-items:center;gap:10px;padding:16px 36px;border-radius:12px;
+    background:linear-gradient(135deg,var(--red2),var(--red));color:#fff;font-weight:700;font-size:15px;
+    box-shadow:0 12px 36px rgba(255,70,85,.34);transition:.2s}
+  .cta:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(255,70,85,.46)}
+  .files{margin-top:18px;color:var(--mute);font-size:12.5px;line-height:2}
+  .files code{background:var(--panel2);border:1px solid var(--line);padding:2px 8px;border-radius:5px;
+    font-size:11.5px;color:var(--dim);word-break:break-all}
+
+  .shot{position:relative;z-index:1;margin:38px 0 0;border-radius:14px;overflow:hidden;
+    border:1px solid var(--line);box-shadow:0 26px 64px rgba(0,0,0,.6)}
+  .shot img{width:100%;display:block}
+
+  section{position:relative;z-index:1;padding:62px 0}
+  section.alt{background:linear-gradient(180deg,rgba(255,255,255,.014),transparent)}
+  h2{font-size:25px;margin:0 0 8px;font-weight:800}
+  .sub{color:var(--mute);margin:0 0 32px;font-size:13.5px}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;transition:.2s}
+  .card:hover{border-color:#333c4a;transform:translateY(-2px)}
+  .card h3{margin:0 0 8px;font-size:14.5px;font-weight:700}
+  .card p{margin:0;color:var(--dim);font-size:12.8px;line-height:1.72}
+  .tag{display:inline-block;font-size:10.5px;color:var(--red2);border:1px solid rgba(255,70,85,.35);
+    background:rgba(255,70,85,.08);border-radius:6px;padding:2px 8px;margin-bottom:11px}
+
+  .shot2 img{width:100%;border-radius:12px;border:1px solid var(--line);display:block}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+  th{color:var(--mute);font-weight:500;font-size:12px}
+  td:first-child{color:var(--dim);width:150px}
+  tr:last-child td{border-bottom:none}
+
+  .log{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .log .ver{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .log .v{font-weight:700;font-size:15px}
+  .log .date{color:var(--mute);font-size:12px}
+  .log ul{margin:0;padding-left:18px;color:var(--dim);font-size:13px;line-height:1.9}
+
+  details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 20px;margin-bottom:10px}
+  details summary{cursor:pointer;font-size:13.8px;font-weight:600;outline:none;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"＋";color:var(--red);margin-right:9px;font-size:13px}
+  details[open] summary::before{content:"－"}
+  details p{color:var(--dim);font-size:13px;margin:11px 0 0;line-height:1.75}
+
+  .repo{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px;
+    display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+
+  /* 下载区 */
+  .dlgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .dlcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;
+    display:flex;flex-direction:column;align-items:flex-start;gap:10px;transition:.2s}
+  .dlcard:hover{border-color:#333c4a}
+  .dlcard h3{margin:0;font-size:15px}
+  .dlcard p{margin:0;color:var(--dim);font-size:12.5px;line-height:1.7;flex:1}
+  .dlcard .cta{padding:11px 20px;font-size:13px;box-shadow:none;margin-top:6px}
+  .dlcard .cta.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:600}
+  .dlcard .cta.ghost:hover{border-color:var(--red);color:var(--red2)}
+  .repo .info{flex:1;min-width:260px}
+  .repo .url{color:var(--red2);font-size:14px;font-weight:600;margin:6px 0 4px;word-break:break-all}
+  .repo .desc{color:var(--mute);font-size:12.5px}
+  .btn{display:inline-block;padding:11px 20px;border-radius:9px;font-size:13px;font-weight:600;
+    border:1px solid var(--line);transition:.2s}
+  .btn:hover{border-color:var(--red);color:var(--red2)}
+  .btn.solid{background:linear-gradient(135deg,var(--red2),var(--red));border-color:transparent;color:#fff}
+
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--red);
+    border-radius:10px;padding:18px 20px;color:var(--dim);font-size:13px;line-height:1.8}
+  .note b{color:var(--text)}
+
+  footer{position:relative;z-index:1;border-top:1px solid var(--line);padding:30px 0 44px;
+    color:var(--mute);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+  @media (max-width:860px){
+    .grid3,.grid2{grid-template-columns:1fr}
+    .hero h1{font-size:31px}
+    nav a.lnk{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+
+<nav>
+  <div class="inner">
+    <a class="brand" href="#top">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M13 1 4 14h7l-1 9 10-14h-7l1-8Z" fill="#fff"/></svg></span>
+      <b>Warmspin</b>
+    </a>
+    <a class="lnk" href="#download">下载</a>
+    <a class="lnk" href="#features">功能</a>
+    <a class="lnk" href="#shots">界面</a>
+    <a class="lnk" href="#req">配置</a>
+    <a class="lnk" href="#log">更新日志</a>
+    <a class="lnk" href="#faq">问答</a>
+    <a class="lnk" href="#repo">开源</a>
+    <a class="navdl" href="download/Warmspin.exe" download>下载</a>
+  </div>
+</nav>
+
+<div class="wrap hero" id="top">
+  <h1>让机械盘上的游戏<br><span>加载快一点</span></h1>
+  <p class="lead">启动前把这次要读的数据提前读进内存，顺手修掉被"优化软件"关掉的预读、被漏掉的杀软扫描和碎片。<br>开源、免费、单文件、不装驱动、不常驻后台。</p>
+
+  <a class="cta" href="download/Warmspin.exe" download>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    下载 Warmspin
+  </a>
+  <div class="files">
+    版本 <b id="ver">2.0.0</b> · Windows 10 / 11 · 单文件约 474 KB · 无需安装运行时<br>
+    SHA-256 <code id="sha">21e781f6c853de4b324c45ed0503f6d9baf9693adc0925baca422bb9aada4876</code>
+  </div>
+
+  <div class="shot">
+    <img src="assets/overview.png" alt="Warmspin 概览页">
+  </div>
+</div>
+
+<section class="wrap alt" id="download">
+  <h2>下载</h2>
+  <p class="sub">三条线路，任选一条能打开的。文件是同一个，SHA-256 也一致。</p>
+  <div class="dlgrid">
+    <div class="dlcard">
+      <span class="tag">本站 · 推荐</span>
+      <h3>直接从本页下载</h3>
+      <p>走当前站点的下载目录，你打开的是哪个站就从哪个站下。</p>
+      <a class="cta" href="download/Warmspin.exe" download>下载 Warmspin.exe</a>
+    </div>
+    <div class="dlcard">
+      <span class="tag">国内线路</span>
+      <h3>Gitee 镜像</h3>
+      <p>GitHub 打不开时走这条，国内直连，不需要任何加速。</p>
+      <a class="cta ghost" href="https://gitee.com/xiaolong13/Warmspin/raw/master/website/download/Warmspin.exe" target="_blank" rel="noopener">去 Gitee 下载</a>
+    </div>
+    <div class="dlcard">
+      <span class="tag">海外线路</span>
+      <h3>GitHub Release</h3>
+      <p>原始发布页，带版本历史和更新说明。</p>
+      <a class="cta ghost" href="https://github.com/xiaolong13/Warmspin/releases/latest" target="_blank" rel="noopener">去 GitHub 下载</a>
+    </div>
+  </div>
+  <p class="sub" style="margin-top:18px">
+    三条线路文件完全一致，下载后可比对 SHA-256：
+    <code style="background:var(--panel2);padding:3px 9px;border-radius:5px;font-size:12px">21e781f6c853de4b324c45ed0503f6d9baf9693adc0925baca422bb9aada4876</code>
+  </p>
+</section>
+
+<section class="wrap" id="features">
+  <h2>它做什么</h2>
+  <p class="sub">六件事，全部可逆，全部不需要装驱动。</p>
+  <div class="grid3">
+    <div class="card">
+      <span class="tag">核心</span>
+      <h3>内存预热</h3>
+      <p>把游戏最可能读的数据先读进 Windows 备用内存，游戏读图时走内存而不是磁头。预算 1~4 GB 可选，严格不超。</p>
+    </div>
+    <div class="card">
+      <span class="tag">系统</span>
+      <h3>六项优化</h3>
+      <p>SysMain 预读、Prefetch、Defender 排除、关闭内容索引、关闭硬盘休眠、碎片整理。一键执行，一键还原。</p>
+    </div>
+    <div class="card">
+      <span class="tag">发现</span>
+      <h3>自动找游戏</h3>
+      <p>扫 Steam 库、桌面与开始菜单快捷方式、注册表安装项。漏了的可以手动添加，之后一直记住。</p>
+    </div>
+    <div class="card">
+      <span class="tag">多盘</span>
+      <h3>认得出多块机械盘</h3>
+      <p>用 WMI 读物理磁盘介质类型，多块盘时可以切换，游戏列表只显示选中那块盘上的游戏。</p>
+    </div>
+    <div class="card">
+      <span class="tag">界面</span>
+      <h3>四套配色</h3>
+      <p>红黑（默认）、红白、靛蓝、青竹，一键切换并记住选择。原生 WPF 绘制，不套壳浏览器。</p>
+    </div>
+    <div class="card">
+      <span class="tag">更新</span>
+      <h3>自动更新</h3>
+      <p>读清单比版本、下载后校验 SHA-256、就地替换并重启。没有新版本时明确告诉你"已是最新版本"。</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap alt" id="shots">
+  <h2>界面</h2>
+  <p class="sub">四个页面：概览、预热启动、系统优化、关于。</p>
+  <div class="grid2 shot2">
+    <img src="assets/warm.png" alt="预热启动页">
+    <img src="assets/tune.png" alt="系统优化页">
+    <img src="assets/about.png" alt="关于页">
+    <img src="assets/overview.png" alt="概览页">
+  </div>
+</section>
+
+<section class="wrap" id="req">
+  <h2>配置要求</h2>
+  <p class="sub">要求很低，因为真正干活的是系统自己的预读和缓存。</p>
+  <table>
+    <tr><th>项目</th><th>要求</th></tr>
+    <tr><td>操作系统</td><td>Windows 10 / 11（已在 10 22H2 实测）</td></tr>
+    <tr><td>运行时</td><td>系统自带的 .NET Framework 4.x，无需另装</td></tr>
+    <tr><td>权限</td><td>需要管理员（改服务、注册表、Defender 排除项）</td></tr>
+    <tr><td>体积</td><td>单文件约 474 KB，配置存在 <code>%LOCALAPPDATA%</code></td></tr>
+    <tr><td>内存</td><td>预热占用 1~4 GB 备用内存，可随时释放</td></tr>
+    <tr><td>网络</td><td>除手动点"检查更新"外不联网</td></tr>
+  </table>
+</section>
+
+<section class="wrap alt" id="log">
+  <h2>更新日志</h2>
+  <p class="sub">每次改动都记在这里。</p>
+  <div class="log">
+    <div class="ver"><span class="v">v2.0.0</span><span class="date">首个公开版本</span></div>
+    <ul>
+      <li>内存预热引擎：按预算挑选文件，严格不超预算</li>
+      <li>六项系统优化，全部可一键还原</li>
+      <li>游戏自动发现：Steam / 快捷方式 / 注册表三路去重</li>
+      <li>多机械盘检测与切换</li>
+      <li>四套主题、运行时换肤</li>
+      <li>自动更新（SHA-256 校验 + 就地替换重启）</li>
+      <li>单文件绿色版，不需要安装</li>
+    </ul>
+  </div>
+</section>
+
+<section class="wrap" id="faq">
+  <h2>常见问题</h2>
+  <p class="sub">先看这里，八成的问题都有答案。</p>
+
+  <details open>
+    <summary>Windows 提示"无法验证发布者 / 未知发布者"，是病毒吗？</summary>
+    <p>不是。这是因为程序<b>没有数字签名证书</b>（一张代码签名证书每年要几百块），Windows 对任何未签名的新程序都会弹这个框，和文件本身是否安全无关。点"更多信息 → 仍要运行"即可。<br>
+    如果不放心：页面上有 SHA-256 可以自己核对；也可以直接去 GitHub 看源码、自己编译一份。</p>
+  </details>
+
+  <details>
+    <summary>它能把机械盘变成固态盘吗？</summary>
+    <p><b>不能，任何软件都不能。</b>机械盘随机 4K 约 0.5~1 MB/s、寻道 12 ms；SATA SSD 随机 4K 约 40 MB/s、寻道 0.1 ms。游戏加载以小文件随机读为主，这段差距是物理限制。<br>
+    Warmspin 做的是把"人祸"部分修好（预读被关、杀软逐个扫描、索引、碎片、冷缓存），再把本次要读的数据提前塞进内存。想真正接近固态，<b>把游戏装到 SSD 上</b>是唯一有效的办法。</p>
+  </details>
+
+  <details>
+    <summary>预热到底有没有用？</summary>
+    <p>同一张地图第二次进会明显更快，因为数据已经在系统缓存里。第一次进图仍然要从盘读，只是读的过程被提前到了启动之前——你等的是"启动前的那几十秒"，而不是"进图时的黑屏"。</p>
+  </details>
+
+  <details>
+    <summary>会不会把系统改坏？</summary>
+    <p>所有改动都记录在本地，点"还原改动"逐项恢复。程序不装驱动、不加开机启动项、不常驻后台。</p>
+  </details>
+
+  <details>
+    <summary>为什么一启动就要管理员权限？</summary>
+    <p>因为要改 Windows 服务（SysMain）、注册表（Prefetch）、Defender 排除项和磁盘电源设置。这些不给管理员权限做不了。</p>
+  </details>
+
+  <details>
+    <summary>找不到我的游戏怎么办？</summary>
+    <p>点右上角「+ 添加游戏」手动选安装目录，之后会一直记住。自动发现用的是启发式规则（Steam 库、快捷方式、注册表），不保证覆盖所有游戏。</p>
+  </details>
+</section>
+
+<section class="wrap alt" id="repo">
+  <h2>开源</h2>
+  <p class="sub">MIT 协议，源码可读、可改、可自己编译。</p>
+
+  <div class="repo">
+    <div class="info">
+      <div style="font-size:13px;color:var(--mute)">GitHub</div>
+      <div class="url">github.com/xiaolong13/Warmspin</div>
+      <div class="desc">源码、更新日志、问题反馈都在这里。欢迎 fork 和提 PR。</div>
+    </div>
+    <a class="btn solid" href="https://github.com/xiaolong13/Warmspin" target="_blank" rel="noopener">打开仓库</a>
+    <a class="btn" href="https://github.com/xiaolong13/Warmspin/issues" target="_blank" rel="noopener">反馈问题</a>
+  </div>
+
+  <div style="height:16px"></div>
+
+  <div class="note">
+    <b>自己编译：</b>只要 Windows 自带的编译器，不需要 Visual Studio 或 .NET SDK。<br>
+    <code style="background:var(--panel2);padding:2px 8px;border-radius:5px;font-size:12px">powershell -ExecutionPolicy Bypass -File build.ps1</code>
+    <br><br>
+    <b>关于这个工具：</b>Warmspin 与任何硬件厂商无关，不修改游戏文件，不上传任何数据。使用前请自行备份重要数据。
+  </div>
+</section>
+
+<footer class="wrap">
+  <div>© 2026 Kite · MIT License · Warmspin · <span style="color:var(--mute)">GitHub / Gitee 双线路</span></div>
+  <div>
+    <a href="https://github.com/xiaolong13/Warmspin" target="_blank" rel="noopener" style="color:var(--dim)">GitHub</a>
+    &nbsp;·&nbsp; 不装驱动 · 不常驻 · 不联网
+  </div>
+</footer>
+</body>
+</html>
