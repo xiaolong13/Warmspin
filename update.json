@@ -1,0 +1,6 @@
+﻿{
+  "version": "2.0.0",
+  "url": "https://example.com/download/Warmspin.exe",
+  "sha256": "ee775db49b98cf5b6b400ef3d863f704fb1f3c5f3ec4ca2c52f3449d172c54c0",
+  "notes": "First public release: memory prewarm, 6 optimizations, multi-disk support, 4 themes."
+}
