@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://xiaolong13.github.io/Warmspin/sitemap.xml
